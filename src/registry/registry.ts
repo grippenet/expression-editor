@@ -1,6 +1,6 @@
 
 import {EnumList, ExpressionSchema, ExpressionDescriptorSchema, ExpressionDescriptorParamSchema} from "../types/schema";
-import { ExpressionSelector, ExpressionList, ExpressionRegistry, ExpressionDescriptor, ExpressionDescriptorParam } from "../types";
+import { ExpressionSelector, ExpressionList, ExpressionRegistry, ExpressionDescriptor, ExpressionDescriptorParam, FlagDescriptor } from "../types";
 
 export class BaseExpressionDescriptor implements ExpressionDescriptor {
 
@@ -97,15 +97,17 @@ export class BaseExpressionDescriptorParam implements ExpressionDescriptorParam 
     }
 }
 
-
-export class BaseExpressionRegistry {
+export class GeneralRegistry implements ExpressionRegistry {
     expressions: ExpressionList
 
     enums: EnumList
 
+    flags:  Map<string, FlagDescriptor>;
+    
     constructor( expressions: ExpressionList,enums: EnumList ) {
         this.expressions = expressions;
         this.enums = enums;
+        this.flags = new Map();
     }
 
     getEnums(): EnumList {
@@ -131,25 +133,18 @@ export class BaseExpressionRegistry {
         return this.expressions[name] ?? undefined;
     }
 
-    toJSON():JSONRegistry  {
-        return {
-            'expressions': this.expressions,
-            'enums': this.enums
-        }
-    }
-    
-}
-
-interface JSONRegistry {
-    [key:string]: object
-}
-
-class GeneralRegistry extends BaseExpressionRegistry {
-    static fromJSON(o: JSONRegistry): GeneralRegistry {
-        return new GeneralRegistry( o['expressions'] as ExpressionList, o['enums'] as EnumList )
+    getKnownFlags(): Map<string, FlagDescriptor> {
+        return this.flags;
     }
 }
 
+/**
+ * Create registry from expression schema describing all known expressions
+ * Expression Schema is a format description of expressions, it's used in external applications  (serialized to json)
+ * this explain why it's not hardcoded in registry by in separated entity
+ * @param schema 
+ * @returns 
+ */
 export const registryFromSchema = (schema: ExpressionSchema): ExpressionRegistry => {
 
     const ee : ExpressionList = {};
@@ -161,6 +156,10 @@ export const registryFromSchema = (schema: ExpressionSchema): ExpressionRegistry
     return new GeneralRegistry(ee, schema.enums);
 }
 
+/**
+ * Create a registry with no known expressions
+ * @returns 
+ */
 export const createEmptyRegistry = () => {
     return new GeneralRegistry({},{});
 }

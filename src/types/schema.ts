@@ -1,6 +1,6 @@
 /**
  * 
- * Interfaces of the JSON expressions schema
+ * Expression Schema : Formal description of known expressions
  * 
  */
 
