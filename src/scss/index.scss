@@ -1,0 +1,65 @@
+.survey-expression {
+    display: inline;
+}
+
+.survey-exp-name {
+    font-style: italic;
+    color: steelblue;
+}
+
+.survey-exp-arglist {
+    list-style-type: none;
+    display: inline;
+    padding-left: .1rem;
+}
+
+.survey-exp-arglist > li {
+    display:inline;
+}
+
+.survey-exp-expanded {
+    display: block !important;
+    padding-left: 1rem;
+    border-left: 2px solid lightblue;
+}
+
+.survey-exp-expanded  > li {
+    display: block !important;
+}
+
+.survey-exp-arg {
+    padding-left: .1rem;
+}
+
+.survey-exp-arg::after {
+    content:", "
+}
+
+.survey-exp-arg.last::after {
+    content:""
+}
+
+.survey-exparg-str {
+    color: darkgreen;
+}
+
+.survey-exparg-num {
+    color: blue;
+}
+
+
+.survey-exparg-str::before {
+    content: '"';
+}
+
+.survey-exparg-str::after {
+    content: '"';
+}
+
+.survey-exp-helper {
+   color: var(--bs-gray);
+   margin-left: 1em;
+   padding: .3rem;
+   border-radius: .3rem;
+   border: 1px solid gainsboro;
+}
