@@ -1,8 +1,8 @@
 import * as types from "survey-engine/data_types";
 import { ExpressionSelector, ExpressionRegistry, ExpressionDescriptor, ExpressionProblem,ExpressionValidator, ExpressionFlavor } from "../types";
-import { BaseExpressionRegistry } from "../registry";
+import { GeneralRegistry } from "../registry";
 
-class AbstractValidator extends BaseExpressionRegistry {
+class AbstractValidator extends GeneralRegistry {
 
 }
 
