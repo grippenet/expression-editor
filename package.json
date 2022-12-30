@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "React components for Influenzanet Study engine expression editor",
   "scripts": {
-    "build": "rollup -c",
+    "schema":"node build/schema.js",
+    "build": "rollup -c && yarn schema",
     "prepublishOnly": "yarn build",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
