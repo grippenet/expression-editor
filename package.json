@@ -1,6 +1,6 @@
 {
   "name": "ifn-expression-editor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React components for Influenzanet Study engine expression editor",
   "scripts": {
     "schema":"node build/schema.js",
