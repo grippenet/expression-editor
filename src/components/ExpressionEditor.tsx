@@ -5,14 +5,26 @@ import { Icon, HelpTip } from './utils';
 import {  createExpressionValidator } from '../validator';
 import { ExpressionValidator, ExpressionFlavor,  ExpressionDescriptor, ExpressionDescriptorParam, ExpressionProblem } from '../types';
 
-import { ExpressionPreviewComponent } from './ExpressionPreview';
-import { ExpressionArgDType } from 'survey-engine/data_types';
+import { ExpressionPreviewComponent,ExpressionPreviewArgComponent } from './ExpressionPreview';
+import { ExpressionArg, ExpressionArgDType, isExpression,Expression } from 'survey-engine/data_types';
 import { getDefaultRegistry } from '../registry';
 
 interface EditorContext {
     validator?: ExpressionValidator
     prefix: string;
     knownList: string; // datalist id for general list of available expressions
+}
+
+export const isExpressionArg = (value: ExpressionArg | any): value is ExpressionArg => {
+    if(typeof(value) !== 'object') {
+        return false;
+    }
+    const v = (value as ExpressionArg);
+    if(!v.dtype) {
+        return typeof(v.str) !== undefined;
+    }
+    // dtype defined ok
+    return true;     
 }
 
 const createTextExp = (str:string): types.ExpressionArg => {
@@ -41,29 +53,78 @@ const DTypes : Array<DTypeOptions>= [
         label: 'expression'
     }
 ]
+
+
+type EditorResultType =  types.Expression|types.ExpressionArg|undefined
+type EditorType = 'Expression' | 'ExpressionArg';
 export interface ExpressionEditorState {
-    getExpression(): types.Expression|undefined;
+    getResult(): EditorResultType;
+    setResult(r:EditorResultType):void;
+    getType(): EditorType
     reset():void
 }
 
 export function createExpressionEditorState(exp?: types.Expression) {
     return new ExpressionEditorStateBase(exp);
 }
-export class ExpressionEditorStateBase {
+
+export function createExpressionArgEditorState(exp?: types.ExpressionArg) {
+    return new ExpressionArgEditorStateBase(exp);
+}
+
+export class ExpressionEditorStateBase implements ExpressionEditorState {
     exp?: types.Expression;
 
     constructor(exp?: types.Expression) {
         this.exp = exp;
     }
 
-    getExpression() {
+    getResult() {
         return this.exp;
+    }
+
+    setResult(r: EditorResultType) {
+       if(isExpression(r) || r === undefined) {
+            this.exp = r;
+       }
+    }
+
+    getType(): EditorType {
+        return 'Expression';
     }
 
     reset() {
         this.exp = undefined;
     }
 }
+
+export class ExpressionArgEditorStateBase implements ExpressionEditorState {
+    exp?: types.ExpressionArg;
+
+    constructor(exp?: types.ExpressionArg) {
+        this.exp = exp;
+    }
+
+    getResult(): types.ExpressionArg | undefined {
+        return this.exp;
+    }
+
+    setResult(r: EditorResultType) {
+       if(isExpressionArg(r) || r === undefined) {
+            this.exp = r;
+       }
+    }
+
+    getType(): EditorType {
+        return 'ExpressionArg';
+    }
+
+    reset() {
+        this.exp = undefined;
+    }
+}
+
+
 export interface ExpressionEditorProps {
     onChange: (state: ExpressionEditorState)=>void;
     state: ExpressionEditorState
@@ -81,7 +142,7 @@ const ExpressionEditorContext = React.createContext<EditorContext>({prefix:'', k
 
 export const ExpressionEditor : React.FC<ExpressionEditorProps> = (props) => {
     
-    const [state, setState] = useState<ExpressionEditorStateBase>(props.state);
+    const [state, setState] = useState<ExpressionEditorState>(props.state);
     const [changed, setChanged] = useState<boolean>(false);
 
     const [prefix, setPrefix] = useState((props.prefix ?? 'exp-editor') + '-' + random_id());
@@ -101,33 +162,51 @@ export const ExpressionEditor : React.FC<ExpressionEditorProps> = (props) => {
 
     //console.log('editor context', context);
 
-    const handleOnChange = (newExp?: types.Expression) => {
-       state.exp = newExp;
+    const handleOnChange = (result?: EditorResultType) => {
+       state.setResult(result);
        setState(state);
        setChanged(true);
     };
 
     const handleReset = ()=>{
-        state.exp = undefined;
+        state.reset();
         setState(state);
         setChanged(true);
     }       
 
-    const exp = state.exp;
+    const result = state.getResult();
 
+    const preview = (r: EditorResultType) => {
+        
+        if(typeof(r) === "undefined") {
+            return 'No expression to preview';
+        }
+        if(isExpression(r)) {
+            <ExpressionPreviewComponent exp={r}/>
+        }
+        return <ExpressionPreviewArgComponent exp={r as ExpressionArg}/>
+    }
+
+    const editor = (r: EditorResultType) => {
+        if(state.getType() == 'Expression') {
+            return <ExpressionElementEditor exp={r as Expression} onChange={handleOnChange}/>;
+        } 
+        return <ExpressionArgEditor arg={r as ExpressionArg} onChange={handleOnChange} index={0}/>
+    }
+    
     const knownExpressions = context.validator.getKnownExpressions();
 
     return <React.Fragment>
         <ExpressionEditorContext.Provider value={context} >
             <Tabs defaultActiveKey="preview">
             <Tab eventKey="preview" title="Preview">
-                    { exp ? <ExpressionPreviewComponent exp={exp}/> : 'No expression to preview' }
+                    { preview(result) }
                 </Tab>
                 <Tab eventKey="editor" title="Editor">
-                    <ExpressionElementEditor exp={exp} onChange={handleOnChange}/>
+                   { editor(result) }
                 </Tab>
                 <Tab eventKey="json" title="JSON view">
-                    <pre className="w-100 h-100" >{JSON.stringify(exp, undefined, 2)}</pre>
+                    <pre className="w-100 h-100" >{JSON.stringify(result, undefined, 2)}</pre>
                 </Tab>
             </Tabs>
             <datalist id={context.knownList}>
@@ -255,7 +334,7 @@ export const ExpressionElementEditor: React.FC<ExpressionElementEditorProps> = (
 
 interface ExpressionArgEditorProps {
     onChange: (arg: types.ExpressionArg, index:number)=>void;
-    onRemove: (index: number)=>void;
+    onRemove?: (index: number)=>void;
     arg?: types.ExpressionArg;
     descriptor?: ExpressionDescriptorParam
     index: number;
@@ -283,10 +362,6 @@ export const ExpressionArgEditor: React.FC<ExpressionArgEditorProps> = (props) =
     const update = (a: types.ExpressionArg)=>{
         setArg(a);
         setChanged(true);
-    }
-
-    const handleRemove = ()=>{
-        props.onRemove(props.index);
     }
 
     const handleStrChange = (e:React.SyntheticEvent<HTMLInputElement>)=>{
@@ -326,7 +401,10 @@ export const ExpressionArgEditor: React.FC<ExpressionArgEditorProps> = (props) =
 
     return <div className="row">
         <div className="col-2">
-            <Button variant="danger" onClick={handleRemove} size="sm" className='me-1'><Icon name="trash"/></Button>
+            {props.onRemove ?
+                <Button variant="danger" onClick={e=> (props.index)} size="sm" className='me-1'><Icon name="trash"/></Button>
+                : ''
+            }
             <select  onChange={(ev)=> handleChangeType(ev.currentTarget.value)} style={{width: '6rem' }} defaultValue={dtype}>
                 { DTypes.map(o=><option key={o.code} value={o.code}>{o.label}</option>)}
             </select>
@@ -337,6 +415,9 @@ export const ExpressionArgEditor: React.FC<ExpressionArgEditorProps> = (props) =
         </div>
     </div>
 }
+
+
+
 
 interface ExpressionDescriptorComponentProps {
     name: string

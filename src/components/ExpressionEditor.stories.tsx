@@ -4,7 +4,7 @@ import React from 'react';
 
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 
-import { createExpressionEditorState, ExpressionEditor, ExpressionEditorState } from './ExpressionEditor';
+import { createExpressionEditorState,createExpressionArgEditorState, ExpressionEditor, ExpressionEditorState } from './ExpressionEditor';
 import { Expression } from 'survey-engine/data_types';
 
 import 'localStyles';
@@ -22,11 +22,20 @@ const DummySave = (state: ExpressionEditorState)=> {};
 
 const Template: ComponentStory<typeof ExpressionEditor> = (args) => <ExpressionEditor {...args} />;
 
-export const Primary = Template.bind({});
+export const ClientExpression = Template.bind({});
 
-Primary.args = {
+ClientExpression.args = {
   mode: 'client',
   state: createExpressionEditorState(undefined),
   onChange: DummySave
 };
-Primary.title = 'Client mode';
+ClientExpression.title = 'Client mode';
+
+export const ClientExpressionArg = Template.bind({});
+
+ClientExpressionArg.args = {
+  mode: 'client',
+  state: createExpressionArgEditorState(undefined),
+  onChange: DummySave
+};
+
