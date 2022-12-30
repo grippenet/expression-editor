@@ -4,8 +4,10 @@ import React from 'react';
 
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 
-import { ExpressionEditor, ExpressionEditorState } from './ExpressionEditor';
+import { createExpressionEditorState, ExpressionEditor, ExpressionEditorState } from './ExpressionEditor';
 import { Expression } from 'survey-engine/data_types';
+
+import 'localStyles';
 
 export default {
   /* 👇 The title prop is optional.
@@ -24,5 +26,7 @@ export const Primary = Template.bind({});
 
 Primary.args = {
   mode: 'client',
+  state: createExpressionEditorState(undefined),
   onChange: DummySave
 };
+Primary.title = 'Client mode';
